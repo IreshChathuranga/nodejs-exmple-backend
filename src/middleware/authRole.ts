@@ -1,19 +1,20 @@
 import { Request, Response, NextFunction } from "express";
 import { AuthRequest } from "./auth";
+import { Role }  from "../model/user"
 
 export const authorizeRoles = (...roles: string[]) => {
   return (req: AuthRequest, res: Response, next: NextFunction) => {
-    const userRoles = req.user?.roles || [];
-    const isAuthorized = userRoles.some((role: string) =>
-      roles.includes(role)
-    );
-
-    if (!isAuthorized) {
-      return res
-        .status(403)
-        .json({ message: "Forbidden: You do not have permission" });
+    if (!req.user) {
+      return res.status(401).json({
+        message: "Unauthorized"
+      })
     }
-
-    next();
-  };
-};
+    const hasRole = roles.some((role) => req.user.roles?.includes(role))
+    if (!hasRole) {
+      return res.status(403).json({
+        message: `Require ${roles} role`
+      })
+    }
+    next()
+  }
+}

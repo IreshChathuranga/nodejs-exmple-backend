@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { refreshToken } from "../controller/authController";
 import {
   getMyDetails,
   login,
@@ -14,5 +15,6 @@ router.post("/register", register);
 router.post("/login", login);
 router.get("/me", authenticate, getMyDetails);
 router.post("/admin/register",authenticate,authorizeRoles("ADMIN"),registerAdmin);
+router.post("/refreshtoken", refreshToken);
 
 export default router;

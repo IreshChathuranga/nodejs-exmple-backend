@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
 import { IUser, Role, Status, User } from "../model/user"
 import bcrypt from "bcryptjs"
-import { signAccessToken } from "../util/tokens"
+import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../util/tokens";
 import { AuthRequest } from "../middleware/auth"
 
 export const register = async (req: Request, res: Response) => {
@@ -69,13 +69,15 @@ export const login = async (req: Request, res: Response) => {
     }
 
     const accessToken = signAccessToken(existingUser)
+    const refreshToken = signRefreshToken(existingUser);
 
     res.status(200).json({
       message: "success",
       data: {
         email: existingUser.email,
         roles: existingUser.roles,
-        accessToken
+        accessToken,
+        refreshToken
       }
     })
   } catch (err: any) {
@@ -144,4 +146,19 @@ export const registerAdmin = async (req: AuthRequest, res: Response) => {
     console.error("Admin Register Error:", err);
     return res.status(500).json({ message: err?.message || "Internal error" });
   }
+};
+
+export const refreshToken = async (req: Request, res: Response) => {
+  const { token } = req.body;
+  if (!token) return res.status(400).json({ message: "Refresh token required" });
+
+  const payload = verifyRefreshToken(token);
+  if (!payload) return res.status(403).json({ message: "Invalid or expired refresh token" });
+
+  const user = await User.findById(payload.sub);
+  if (!user) return res.status(404).json({ message: "User not found" });
+
+  const accessToken = signAccessToken(user); 
+
+  res.status(200).json({ accessToken });
 };
